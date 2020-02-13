@@ -18,7 +18,7 @@ import json
 # * Stretch: Add a timer to keep track of how long it takes to find a proof
 
 
-def proof_of_work(self, block):
+def proof_of_work(block):
         """
         Simple Proof of Work Algorithm
         Stringify the block and look for a proof.
@@ -48,7 +48,7 @@ def valid_proof(block_string, proof):
     guess = f'{block_string}{proof}'.encode()
     guess_hash = hashlib.sha256(guess).hexdigest()
 
-    return guess_hash[:4] == "0000"
+    return guess_hash[:6] == "000000"
 
 
 if __name__ == '__main__':
@@ -64,8 +64,10 @@ if __name__ == '__main__':
     print("ID is", id)
     f.close()
 
+    coins_mined = 0
     # Run forever until interrupted
     while True:
+        print("starting to look for Proof")
         r = requests.get(url=node + "/last_block")
         # Handle non-json response
         try:
@@ -77,9 +79,10 @@ if __name__ == '__main__':
             break
 
         # TODO: Get the block from `data` and use it to look for a new proof
-        print("starting work")
-        new_proof = proof_of_work(data["block"])
-        print("Finished work")
+        last_block = data['last_block']
+        new_proof = proof_of_work(last_block)
+        print(f"Proof found: {new_proof}")
+
         # When found, POST it to the server {"proof": new_proof, "id": id}
         post_data = {"proof": new_proof, "id": id}
 
@@ -89,4 +92,7 @@ if __name__ == '__main__':
         # TODO: If the server responds with a 'message' 'New Block Forged'
         # add 1 to the number of coins mined and print it.  Otherwise,
         # print the message from the server.
-        
+        if data["message"] == "New Block Forged":
+            coins_mined += 1
+
+        print(coins_mined)
